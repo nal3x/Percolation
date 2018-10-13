@@ -10,8 +10,8 @@ public class Percolation {
     private int gridSize;
     private WeightedQuickUnionUF uf;
     private boolean[][] sites2dArray;
-    private final boolean BLOCKED = false;
-    private final boolean OPEN = true;
+    private final static boolean BLOCKED = false;
+    private final static boolean OPEN = true;
     private int openSites;
     private int dummyTopSiteIndex = 0;
     private int dummyBottomSiteIndex;

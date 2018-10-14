@@ -1,55 +1,42 @@
-/* *****************************************************************************
- *  Name:
- *  Date:
- *  Description:
- **************************************************************************** */
-
 import edu.princeton.cs.algs4.StdRandom;
+import edu.princeton.cs.algs4.StdStats;
 
 public class PercolationStats {
-    static int totalOpenSites;
-    static int trials;
-    static int gridSize;
+
+    /**
+     *  Performs #trials of computational experiments on an n-by-n grid and provides mean, standard
+     *  deviation, and the 95% confidence interval for the percolation threshold.
+     */
+
+    private double[] fractionOfOpenSitesInTrial; // array to hold result of each trial
+    private int trials; // total trials
 
         public PercolationStats(int n, int trials) { // perform trials independent experiments on an n-by-n grid
             this.trials = trials;
-            this.gridSize = n;
+            fractionOfOpenSitesInTrial = new double[trials];
             if (n < 1 || trials < 1) {
                 throw new IllegalArgumentException();
-
             }
             for (int trial = 0; trial < trials; trial++) {
-                //totalOpenSites = 0;
-                Percolation percolation = new Percolation(n);
-                //open a site randomly
-                do {
+                Percolation percolation = new Percolation(n); // create new percolation for trial
+                do { // open a site randomly
                     percolation.open(StdRandom.uniform(n) + 1, StdRandom.uniform(n) + 1);
                 } while (!percolation.percolates());
-                totalOpenSites += percolation.numberOfOpenSites();
+                //when system percolates save fraction of open sites to array
+                fractionOfOpenSitesInTrial[trial] = (double) percolation.numberOfOpenSites()
+                        / (n * n);
             }
         }
-        public static double mean() { // sample mean of percolation threshold
-            return (double)totalOpenSites / trials / (gridSize * gridSize);
-
+        public double mean() { // sample mean of percolation threshold
+            return StdStats.mean(fractionOfOpenSitesInTrial);
         }
         public double stddev() { // sample standard deviation of percolation threshold
-            return -1.0;
+            return StdStats.stddev(fractionOfOpenSitesInTrial);
         }
         public double confidenceLo() { // low  endpoint of 95% confidence interval
-            return -1.0;
+            return mean() - (1.96 * stddev()) / Math.sqrt(trials);
         }
         public double confidenceHi() { // high endpoint of 95% confidence interval
-            return -1.0;
+            return mean() + (1.96 * stddev()) / Math.sqrt(trials);
         }
-
-
-    public static void main(String[] args) { // test client (described below)
-            if (args.length == 2) {
-                int gridSize = Integer.parseInt(args[0]);
-                int trials = Integer.parseInt(args[1]);
-                PercolationStats percolationStats = new PercolationStats(gridSize, trials);
-                System.out.println("Mean: " + mean());
-        }
-
-    }
 }

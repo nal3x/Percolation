@@ -14,14 +14,13 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
 
-    private int n; //grid size
-    private WeightedQuickUnionUF uf;
+    private static final boolean OPEN = true;
+    private final int n; // grid size
+    private final WeightedQuickUnionUF uf;
     private boolean[][] sites2dArray;
-    private final static boolean BLOCKED = false;
-    private final static boolean OPEN = true;
     private int openSites;
-    private int dummyTopSiteIndex;
-    private int dummyBottomSiteIndex;
+    private final int dummyTopSiteIndex;
+    private final int dummyBottomSiteIndex;
 
     public Percolation(int n) { // Construcor creates n-by-n grid, with all sites blocked
         if (n < 1) { // and throws a java.lang.IllegalArgumentException if n ≤ 0.
@@ -56,11 +55,11 @@ public class Percolation {
             if (isValidIndex(row + 1, col) && isOpen(row + 1, col)) { // bottom
                     uf.union(siteIndex(row, col), siteIndex(row + 1, col));
             }
-            if (isValidIndex(row , col + 1) && isOpen(row, col + 1)) { // right
-                uf.union(siteIndex(row, col), siteIndex(row , col + 1));
+            if (isValidIndex(row, col + 1) && isOpen(row, col + 1)) { // right
+                uf.union(siteIndex(row, col), siteIndex(row, col + 1));
             }
-            if (isValidIndex(row , col - 1) && isOpen(row, col - 1)) { // left
-                uf.union(siteIndex(row, col), siteIndex(row , col - 1));
+            if (isValidIndex(row, col - 1) && isOpen(row, col - 1)) { // left
+                uf.union(siteIndex(row, col), siteIndex(row, col - 1));
             }
         }
     }
@@ -86,7 +85,12 @@ public class Percolation {
     }
 
     public boolean percolates() { // does the system percolate?
-        return uf.connected(dummyTopSiteIndex, dummyBottomSiteIndex);
+        if (n == 1) { // corner case for 1 site only
+            return isOpen(1, 1);
+        } else {
+            return uf.connected(dummyTopSiteIndex, dummyBottomSiteIndex);
+        }
+
     }
 
     private boolean isValidIndex(int row, int col) { // Private method which to validate indices

@@ -7,40 +7,44 @@ public class PercolationStats {
      *  Performs #trials of computational experiments on an n-by-n grid and provides mean, standard
      *  deviation, and the 95% confidence interval for the percolation threshold.
      */
-
-    private double[] fractionOfOpenSitesInTrial; // array to hold result of each trial
-    private int trials; // total trials
+    private static final double CONFIDENCE_95 = 1.96;
+    private final int trials; // total trials
+    private final double mean;
+    private final double standardDeviation;
 
         public PercolationStats(int n, int trials) { // perform trials independent experiments on an n-by-n grid
-            this.trials = trials;
-            fractionOfOpenSitesInTrial = new double[trials];
             if (n < 1 || trials < 1) {
                 throw new IllegalArgumentException();
             }
+            this.trials = trials;
+            double[] fractionOfOpenSitesInTrial = new double[trials];
+
             for (int trial = 0; trial < trials; trial++) {
                 Percolation percolation = new Percolation(n); // create new percolation for trial
                 do { // open a site randomly
                     percolation.open(StdRandom.uniform(n) + 1, StdRandom.uniform(n) + 1);
                 } while (!percolation.percolates());
-                //when system percolates save fraction of open sites to array
+                // when system percolates save fraction of open sites to array
                 fractionOfOpenSitesInTrial[trial] = (double) percolation.numberOfOpenSites()
                         / (n * n);
             }
+            mean = StdStats.mean(fractionOfOpenSitesInTrial);
+            standardDeviation = StdStats.stddev(fractionOfOpenSitesInTrial);
         }
         public double mean() { // sample mean of percolation threshold
-            return StdStats.mean(fractionOfOpenSitesInTrial);
+            return mean;
         }
         public double stddev() { // sample standard deviation of percolation threshold
-            return StdStats.stddev(fractionOfOpenSitesInTrial);
+            return standardDeviation;
         }
         public double confidenceLo() { // low  endpoint of 95% confidence interval
-            return mean() - (1.96 * stddev()) / Math.sqrt(trials);
+            return mean - (CONFIDENCE_95 * standardDeviation) / Math.sqrt(trials);
         }
         public double confidenceHi() { // high endpoint of 95% confidence interval
-            return mean() + (1.96 * stddev()) / Math.sqrt(trials);
+            return mean + (CONFIDENCE_95 * standardDeviation) / Math.sqrt(trials);
         }
 
-        public static void main (String[] args) {
+        public static void main(String[] args) {
             if (args.length == 2) {
                 int n = Integer.parseInt(args[0]);
                 int trials = Integer.parseInt(args[1]);

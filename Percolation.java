@@ -12,7 +12,14 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
  *  percolates when the two dummy sites are connected. The second union-find data structure is used
  *  to check for full sites and includes only the top dummy site to avoid "backwash", a situation
  *  where some sites at the bottom of the grid are falsely characterized as full because the top
- *  dummy node has connected to the bottom after the system has percolated.
+ *  dummy node has connected to the bottom after the system has percolated. Another solution for
+ *  the backwash problem would be to completely eliminate the bottom node and keep only one union-
+ *  find structure (fullSitesUnionFind). But then, in order to check if the system percolates, we
+ *  would have to iterate over sites of the bottom row until we find a full site (nlogn). The
+ *  automatic grader showed memory and timing issues (Memory: 6/8 tests passed Timing: 7/20 tests
+ *  passed). Maybe another idea for solving the backwash problem would be to extend the union-find
+ *  class and add a disconnect method, removing the bottom node as soon as the system percolates?
+ *  The solution as is resulted in 100% score.
  */
 
 public class Percolation {

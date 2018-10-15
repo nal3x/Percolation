@@ -1,44 +1,51 @@
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 /**
- *  Sites are represented by sites2dArray, a (n x n) boolean array. All sites are
- *  initially blocked (false). Each site is represented via siteIndex as a unique number in a
- *  WeightedQuickUnionUF structure. Whenever a site is opened, it is connected (union) to its open
- *  neighboors (if any). A full site is an open site that can be connected to an open site in the
- *  top row via a chain of neighboring (left, right, up, down) open sites. The system percolates if
- *  there is a full site in the bottom row. In this implementation two dummy sites are used. The
- *  top one is connected to all sites of the top row and the bottom one to all sites of the bottom
- *  row. This means that a site is full if it is open and connected to the top dummy site and that
- *  the system percolates when the two dummy sites are connected.
+ *  Sites are represented by the (n x n) boolean sites2dArray. All sites are initially blocked,
+ *  denoted by the false value. Each site is mapped to a unique number via siteIndex and this value
+ *  is used in the WeightedQuickUnionUF structures. Whenever a site is opened, it is connected
+ *  (union) to its open neighboors (if any). A full site is an open site that can be connected to
+ *  an open site in the top row via a chain of neighboring (left, right, up, down) open sites.
+ *  The system percolates if there is a full site in the bottom row. In this implementation two
+ *  union-find data structures are used. The first one includes two dummy sites: top is connected to
+ *  all sites of the top row and the bottom one to all sites of the bottom row. The system
+ *  percolates when the two dummy sites are connected. The second union-find data structure is used
+ *  to check for full sites and includes only the top dummy site to avoid "backwash", a situation
+ *  where some sites at the bottom of the grid are falsely characterized as full because the top
+ *  dummy node has connected to the bottom after the system has percolated.
  */
 
 public class Percolation {
 
     private static final boolean OPEN = true;
     private final int n; // grid size
-    private final WeightedQuickUnionUF uf;
+    private final WeightedQuickUnionUF percolationUnionFind;
+    private final WeightedQuickUnionUF fullSitesUnionFind; // used only to include full sites
     private boolean[][] sites2dArray;
     private int openSites;
     private final int dummyTopSiteIndex;
     private final int dummyBottomSiteIndex;
 
     public Percolation(int n) { // Construcor creates n-by-n grid, with all sites blocked
-        if (n < 1) { // and throws a java.lang.IllegalArgumentException if n ≤ 0.
+        if (n < 1) { // throws a java.lang.IllegalArgumentException if n ≤ 0.
             throw new IllegalArgumentException();
         }
         this.n = n;
         sites2dArray = new boolean[n][n]; // each element is false (blocked) by default
-        uf = new WeightedQuickUnionUF(n * n + 2); // +2 for dummy nodes.
+        percolationUnionFind = new WeightedQuickUnionUF(n * n + 2); // +2 for dummy nodes.
         // Sites with indices 0 and n^2 + 1 are top and bottom dummy nodes respectively
+        fullSitesUnionFind = new WeightedQuickUnionUF(n * n + 1); // sites + dummyTopSite
         dummyTopSiteIndex = 0;
         dummyBottomSiteIndex = n * n + 1;
-        // we connect the top dummy node with all elements of 1st row
+        // we connect the top dummy node with all elements of 1st row in both UFs
         for (int row = 1, col = 1; col <= this.n; col++) {
-            uf.union(dummyTopSiteIndex, siteIndex(row, col));
+            percolationUnionFind.union(dummyTopSiteIndex, siteIndex(row, col));
+            fullSitesUnionFind.union(dummyTopSiteIndex, siteIndex(row, col));
         }
-        // and also connect the bottom dummy node with all elements of the last row
-        for (int row = n, col = 1; col <= n; col++) {
-            uf.union(dummyBottomSiteIndex, siteIndex(row, col));
+        // for the percolation UF only, we connect the bottom dummy node with all elements of the
+        // last row.
+        for (int col = 1; col <= n; col++) {
+            percolationUnionFind.union(dummyBottomSiteIndex, siteIndex(n, col));
         }
     }
 
@@ -50,16 +57,20 @@ public class Percolation {
             openSites++;
             // Then we connect it to top, bottom, left and right sites if they are valid and open
             if (isValidIndex(row - 1, col) && isOpen(row - 1, col)) { // top
-                uf.union(siteIndex(row, col), siteIndex(row - 1, col));
+                    percolationUnionFind.union(siteIndex(row, col), siteIndex(row - 1, col));
+                    fullSitesUnionFind.union(siteIndex(row, col), siteIndex(row - 1, col));
             }
             if (isValidIndex(row + 1, col) && isOpen(row + 1, col)) { // bottom
-                    uf.union(siteIndex(row, col), siteIndex(row + 1, col));
+                    percolationUnionFind.union(siteIndex(row, col), siteIndex(row + 1, col));
+                    fullSitesUnionFind.union(siteIndex(row, col), siteIndex(row + 1, col));
             }
             if (isValidIndex(row, col + 1) && isOpen(row, col + 1)) { // right
-                uf.union(siteIndex(row, col), siteIndex(row, col + 1));
+                percolationUnionFind.union(siteIndex(row, col), siteIndex(row, col + 1));
+                fullSitesUnionFind.union(siteIndex(row, col), siteIndex(row, col + 1));
             }
             if (isValidIndex(row, col - 1) && isOpen(row, col - 1)) { // left
-                uf.union(siteIndex(row, col), siteIndex(row, col - 1));
+                percolationUnionFind.union(siteIndex(row, col), siteIndex(row, col - 1));
+                fullSitesUnionFind.union(siteIndex(row, col), siteIndex(row, col - 1));
             }
         }
     }
@@ -77,7 +88,7 @@ public class Percolation {
         if (!isValidIndex(row, col)) {
             throw new IllegalArgumentException();
         }
-        return (isOpen(row, col) && uf.connected(dummyTopSiteIndex, siteIndex(row, col)));
+        return (isOpen(row, col) && fullSitesUnionFind.connected(dummyTopSiteIndex, siteIndex(row, col)));
     }
 
     public int numberOfOpenSites() { // number of open sites
@@ -88,7 +99,7 @@ public class Percolation {
         if (n == 1) { // corner case for 1 site only
             return isOpen(1, 1);
         } else {
-            return uf.connected(dummyTopSiteIndex, dummyBottomSiteIndex);
+            return percolationUnionFind.connected(dummyTopSiteIndex, dummyBottomSiteIndex);
         }
 
     }
